@@ -8,7 +8,8 @@ public class PlayerAnimation : MonoBehaviour {
     {
         Standing,
         Running,
-        Melee
+        Melee,
+        None,
     }
 
     public PlayerState State {
@@ -18,7 +19,7 @@ public class PlayerAnimation : MonoBehaviour {
         }
         set 
         {
-            animator.SetInteger("State", (int)value);
+            if(value != PlayerState.None) animator.SetInteger("State", (int)value);
         }
     }
 
