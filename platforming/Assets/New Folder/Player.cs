@@ -1,36 +1,43 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-[RequireComponent (typeof (Controller2D))]
+[RequireComponent(typeof(Controller2D))]
 public class Player : MonoBehaviour {
 
     Vector3 playerPosition;
 
+    public float debugging;
+
 
     public float maxJumpHeight = 4;
     public float minJumpHeight = 1;
+    public float dashSpeed = 4;
     public float timeToJumpApex = .4f;
     public float accelerationTimeAirborne = .2f;
     public float accelerationTimeGrounded = .1f;
     public float moveSpeed = 6;
     public float fireRate = 0;
-    public float fireDelay = 0; 
+    public float fireDelay = 0;
     float timeToFire;
     public float attackDelay = 0.5f;
     float timeToAttack;
     Vector3 firePoint;
     public LayerMask whatToHit;
-    public float sprintSpeed;
+    public float sprintMod;
+    public bool canDash = true;
+    public float dashDelay = 0;
+    public float dashStep = 0;
+    public bool canSprint = false;
     public bool doubleJump = false;
     public bool doubleJumped = false;
     public bool attacking;
     public GameObject weapon;
-    
+
 
 
     public GameObject bulletPreFab;
-    
 
+    public bool walljump = true;
     public Vector2 wallJumpClimb;
     public Vector2 wallJumpOff;
     public Vector2 wallLeap;
@@ -57,12 +64,13 @@ public class Player : MonoBehaviour {
     }
     void Update()
     {
+        debugging = Input.GetAxisRaw("Horizontal");
 
         Vector2 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
         int wallDirectionX = (controller.collisions.left) ? -1 : 1;
-        if (Input.GetKey(KeyCode.LeftShift))
+        if (Input.GetKey(KeyCode.LeftShift) && canSprint)
         {
-            float targetVelocityX = input.x * moveSpeed * sprintSpeed;
+            float targetVelocityX = input.x * moveSpeed * sprintMod;
             velocity.x = Mathf.SmoothDamp(velocity.x, targetVelocityX, ref velocityxSmoothing, (controller.collisions.below) ? accelerationTimeGrounded : accelerationTimeAirborne);
 
         }
@@ -73,27 +81,46 @@ public class Player : MonoBehaviour {
 
         }
 
-
-
-        
-        if (timeToAttack > 0)
+        if (controller.collisions.below && doubleJumped)
         {
-            timeToAttack -= Time.deltaTime;
+            doubleJumped = false;
+        }
+        /* what the fuck 
+        if (dashDelay >= 1)
+        {
+            dashDelay = 0;
+            dashStep = 0;
+        }
+        if (Input.GetAxisRaw("Horizontal") == 0 && dashStep != 10)
+        {
+            dashStep = 0;
+        }
+        if (Input.GetAxisRaw("Horizontal") > 0.5 || Input.GetAxisRaw("Horizontal") < -0.5 && dashStep == 0)
+        {
+            dashDelay += Time.deltaTime;
+            dashStep = 10;
+        }
+        if (Input.GetAxisRaw("Horizontal") < 0.5 && Input.GetAxisRaw("Horizontal") >= 0 && dashStep == 10)
+        {
+            dashStep = 200;
+        }
+        else if (Input.GetAxisRaw("Horizontal") > -0.5 && Input.GetAxisRaw("Horizontal") <= 0 && dashStep == 10)
+        {
+            dashStep = 200;
+        }
+        if (Input.GetAxisRaw("Horizontal") > 0.5 && dashStep == 200 && dashDelay <= 1)
+        {
+            velocity.x += dashSpeed;
+            dashStep = 3000;
+        }
+        if (Input.GetAxisRaw("Horizontal") < -0.5 && dashStep == 200 && dashDelay <= 1)
+        {
+            velocity.x -= dashSpeed;
+            dashStep = 3000;
+        }
+        */
+       
 
-        }
-        else if (timeToAttack < 0)
-        {
-            timeToAttack = 0;
-        }
-        else if (timeToAttack == 0 && !attacking)
-        {
-            if (Input.GetKeyDown(KeyCode.X) && !weapon.activeSelf)
-            {
-                weapon.SetActive(true);
-                //attacking = true;
-                //timeToAttack = attackDelay;
-            }
-        }
 
         bool wallSliding = false;
         if ((controller.collisions.left || controller.collisions.right) && !controller.collisions.below )
@@ -135,7 +162,7 @@ public class Player : MonoBehaviour {
         if (Input.GetKeyDown(KeyCode.Z))
         {
             
-            if (wallSliding)
+            if (wallSliding && walljump)
             {
                 if (wallDirectionX == input.x)
                 {
@@ -152,6 +179,11 @@ public class Player : MonoBehaviour {
                     velocity.x = -wallDirectionX * wallLeap.x;
                     velocity.y = wallLeap.y;
                 }
+            }
+            if (wallSliding && !walljump)
+            {
+                velocity.x = -wallDirectionX * wallJumpOff.x;
+                velocity.y = wallJumpOff.y;
             }
             if (!doubleJump)
             {
